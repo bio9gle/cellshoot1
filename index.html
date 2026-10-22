@@ -1,182 +1,562 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixed Header Code Block</title>
-    <style>
-        :root {
-            --bg-color: #f7f6f3;
-            --border-color: #e1dfdc;
-            --text-color: #37352f;
-            --header-bg: #f1f0ec;
-            --btn-hover: #e0deda;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>세포소기관 슈팅 아카데미</title>
+<style>
+  :root{
+    --bg:#070b1c; --panel:#121a3a; --line:#2a3566; --text:#e8ecff; --muted:#9aa5d6;
+    --animal:#ff7aa2; --plant:#6ee7a0; --gold:#ffd86b; --danger:#ff5d5d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;overflow:hidden}
+  #app{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column}
+  .screen{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+  .hidden{display:none !important}
 
-        /* 전체 창 높이를 고정하고 메인 스크롤 숨김 */
-        body, html {
-            margin: 0;
-            padding: 0;
-            background-color: transparent;
-            height: 100%;
-            overflow: hidden; 
-        }
+  /* ---------- 시작 화면 ---------- */
+  #start{flex-direction:column;gap:18px;padding:20px;text-align:center;background:radial-gradient(ellipse at top,#1b2a6b 0%,var(--bg) 60%)}
+  #start h1{font-size:clamp(26px,5vw,42px);letter-spacing:-1px;background:linear-gradient(90deg,var(--animal),var(--gold),var(--plant));-webkit-background-clip:text;background-clip:text;color:transparent}
+  #start .sub{color:var(--muted);max-width:620px;line-height:1.6;font-size:15px}
+  .ships{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .ship-card{width:250px;padding:18px;border:2px solid var(--line);border-radius:16px;background:var(--panel);cursor:pointer;transition:.15s;text-align:left}
+  .ship-card:hover{transform:translateY(-4px)}
+  .ship-card.animal:hover{border-color:var(--animal);box-shadow:0 0 24px rgba(255,122,162,.35)}
+  .ship-card.plant:hover{border-color:var(--plant);box-shadow:0 0 24px rgba(110,231,160,.35)}
+  .ship-card canvas{display:block;margin:0 auto 10px}
+  .ship-card h2{font-size:20px;margin-bottom:6px}
+  .ship-card.animal h2{color:var(--animal)} .ship-card.plant h2{color:var(--plant)}
+  .ship-card p{font-size:13px;color:var(--muted);line-height:1.5}
+  .rules{max-width:640px;background:rgba(18,26,58,.8);border:1px solid var(--line);border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.7;text-align:left;color:#c9d1ff}
+  .rules b{color:var(--gold)}
 
-        .notion-code-container {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            margin: 8px;
-            height: calc(100vh - 16px);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
+  /* ---------- 게임 화면 ---------- */
+  #game{flex-direction:row;gap:14px;padding:8px;align-items:stretch;justify-content:center}
+  #stage{position:relative;height:100%;aspect-ratio:3/4;max-width:100%}
+  canvas#c{width:100%;height:100%;display:block;border-radius:14px;border:2px solid var(--line);background:#050816;touch-action:none}
+  #side{width:230px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+  #side h3{font-size:14px;color:var(--gold);letter-spacing:1px}
+  .org-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 7px;border-radius:8px;background:rgba(255,255,255,.03);opacity:.45}
+  .org-row.got{opacity:1;background:rgba(255,216,107,.1)}
+  .org-row .ic{font-size:16px;width:22px;text-align:center}
+  .tag{margin-left:auto;font-size:10px;padding:2px 6px;border-radius:999px;border:1px solid}
+  .tag.animal{color:var(--animal);border-color:var(--animal)}
+  .tag.plant{color:var(--plant);border-color:var(--plant)}
+  .tag.common{color:var(--muted);border-color:var(--muted)}
+  #touch{position:absolute;left:0;right:0;bottom:0;display:none;justify-content:space-between;padding:10px;pointer-events:none}
+  #touch button{pointer-events:auto;width:64px;height:64px;border-radius:50%;border:2px solid var(--line);background:rgba(18,26,58,.8);color:#fff;font-size:24px}
+  @media (hover:none) and (pointer:coarse){ #touch{display:flex} }
+  @media (max-width:760px){ #side{display:none} #game{padding:4px} }
 
-        /* 상단 툴바 영역 (고정) */
-        .notion-code-header {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--header-bg);
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 13px;
-            color: #787774;
-            z-index: 10;
-        }
-
-        .notion-code-lang {
-            font-weight: 500;
-        }
-
-        .notion-code-buttons {
-            display: flex;
-            gap: 6px;
-        }
-
-        .notion-btn {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 6px 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .notion-btn:hover {
-            background-color: var(--btn-hover);
-            border-color: #c9c7c2;
-        }
-
-        /* 코드 표시 영역 (스크롤) */
-        .notion-code-body {
-            flex-grow: 1;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .notion-code-pre {
-            margin: 0;
-            padding: 16px;
-            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-    </style>
+  /* ---------- 모달 ---------- */
+  .modal{position:fixed;inset:0;background:rgba(3,5,15,.78);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10;backdrop-filter:blur(3px)}
+  .box{width:min(520px,100%);background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .card-reveal{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .card-face{width:70px;height:94px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,#2b3a86,#0f1640);border:2px solid var(--gold);box-shadow:0 0 18px rgba(255,216,107,.4);animation:flip .5s ease}
+  @keyframes flip{from{transform:rotateY(90deg)}to{transform:rotateY(0)}}
+  .card-reveal h2{font-size:22px}
+  .card-reveal .meta{font-size:12px;color:var(--muted);margin-top:4px}
+  .q{font-size:16px;line-height:1.5;margin:10px 0 14px;font-weight:600}
+  .opts{display:grid;gap:8px}
+  .opts button{text-align:left;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:#0c1230;color:var(--text);font-size:14px;cursor:pointer;line-height:1.4}
+  .opts button:hover:not(:disabled){border-color:var(--gold);background:#161f4d}
+  .opts button.ok{border-color:var(--plant);background:rgba(110,231,160,.18)}
+  .opts button.bad{border-color:var(--danger);background:rgba(255,93,93,.18)}
+  .result{margin-top:14px;padding:12px;border-radius:10px;font-size:14px;line-height:1.6;background:rgba(255,255,255,.04)}
+  .result.good{border-left:4px solid var(--plant)} .result.warn{border-left:4px solid var(--gold)} .result.bad{border-left:4px solid var(--danger)}
+  .btn{margin-top:14px;width:100%;padding:12px;border-radius:10px;border:none;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--gold),#ffb347);color:#1a1200}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);margin-top:8px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+  .stat{background:#0c1230;border-radius:10px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:22px;color:var(--gold)} .stat span{font-size:12px;color:var(--muted)}
+</style>
 </head>
 <body>
+<div id="app">
 
-<div class="notion-code-container">
-    <div class="notion-code-header">
-        <span class="notion-code-lang">HTML / CSS / JS</span>
-        <div class="notion-code-buttons">
-            <button class="notion-btn" onclick="runCode()">▶ 실행하기 (새창)</button>
-            <button class="notion-btn" onclick="copyCode(this)">📋 코드 복사</button>
+  <!-- 시작 화면 -->
+  <div id="start" class="screen">
+    <h1>🧬 세포소기관 슈팅 아카데미</h1>
+    <p class="sub">병원체를 물리치고 <b>미지의 세포소기관 카드</b>를 모아라!<br>퀴즈를 맞히면 연료가 보충되지만, <b>비행선에 맞는 소기관</b>만 연료로 쓸 수 있다.</p>
+    <div class="ships">
+      <div class="ship-card animal" onclick="startGame('animal')">
+        <canvas id="pvA" width="120" height="100"></canvas>
+        <h2>동물세포 비행선</h2>
+        <p>연료: 동물세포 소기관 + 공통 소기관<br>(리소좀, 중심체 등은 OK / 엽록체·세포벽·액포는 ✗)</p>
+      </div>
+      <div class="ship-card plant" onclick="startGame('plant')">
+        <canvas id="pvP" width="120" height="100"></canvas>
+        <h2>식물세포 비행선</h2>
+        <p>연료: 식물세포 소기관 + 공통 소기관<br>(엽록체, 세포벽, 액포 등은 OK / 리소좀·중심체는 ✗)</p>
+      </div>
+    </div>
+    <div class="rules">
+      <b>조작</b> ← → (또는 A/D) 이동, ↑ ↓ (W/S) 전·후진, <b>스페이스</b> 발사 · 모바일은 화면 버튼<br>
+      <b>규칙</b> 연료는 계속 줄어든다. 병원체를 일정 수 격파하면 <b>중간 보스</b>가 등장하고, 보스를 물리치면 <b>? 카드</b>가 떨어진다.
+      카드를 먹으면 소기관이 공개되며 퀴즈가 나온다. <b>정답 + 비행선에 맞는 소기관</b> = 연료 +45 · 정답이지만 맞지 않는 소기관 = 점수만 · 오답 = 연료 −10<br>
+      적과 충돌하거나 보스 탄에 맞으면 연료가 줄어든다. 연료가 0이 되면 게임 오버!
+    </div>
+  </div>
+
+  <!-- 게임 화면 -->
+  <div id="game" class="screen hidden">
+    <div id="stage">
+      <canvas id="c" width="480" height="640"></canvas>
+      <div id="touch">
+        <div style="display:flex;gap:8px">
+          <button id="tL">◀</button><button id="tR">▶</button>
         </div>
+        <button id="tF">🔥</button>
+      </div>
     </div>
-    <div class="notion-code-body">
-        <pre class="notion-code-pre"><code id="displayCode"></code></pre>
+    <div id="side">
+      <h3>🔬 소기관 도감</h3>
+      <div id="dex"></div>
     </div>
+  </div>
+
+  <!-- 퀴즈 모달 -->
+  <div id="quiz" class="modal hidden">
+    <div class="box">
+      <div class="card-reveal">
+        <div class="card-face" id="qIcon">?</div>
+        <div><h2 id="qName"></h2><div class="meta" id="qMeta"></div></div>
+      </div>
+      <div class="q" id="qText"></div>
+      <div class="opts" id="qOpts"></div>
+      <div id="qResult" class="result hidden"></div>
+      <button class="btn hidden" id="qNext" onclick="resumeGame()">계속 비행하기 🚀</button>
+    </div>
+  </div>
+
+  <!-- 게임 오버 모달 -->
+  <div id="over" class="modal hidden">
+    <div class="box" style="text-align:center">
+      <h2 style="font-size:26px">⛽ 연료 고갈! 게임 오버</h2>
+      <div class="stats">
+        <div class="stat"><b id="oScore">0</b><span>점수</span></div>
+        <div class="stat"><b id="oKills">0</b><span>격파한 병원체</span></div>
+        <div class="stat"><b id="oBoss">0</b><span>물리친 보스</span></div>
+        <div class="stat"><b id="oOrg">0</b><span>정복한 소기관</span></div>
+      </div>
+      <div id="oList" style="font-size:13px;color:var(--muted);line-height:1.6"></div>
+      <button class="btn" onclick="startGame(ship)">같은 비행선으로 재도전</button>
+      <button class="btn ghost" onclick="toStart()">비행선 다시 고르기</button>
+    </div>
+  </div>
 </div>
 
-<!-- ========================================================================= -->
-<!-- ▼▼▼ 아래 <textarea> 와 </textarea> 사이에 '실행할 코드'를 붙여넣으세요 ▼▼▼ -->
-<!-- ========================================================================= -->
-<textarea id="sourceCode" style="display: none;">
-
-(이 글을 지우고 여기에 뱀게임 코드를 붙여 넣기 하세요)
-
-</textarea>
-<!-- ========================================================================= -->
-<!-- ▲▲▲ 여기까지 ▲▲▲ -->
-<!-- ========================================================================= -->
-
 <script>
-    // 1. 숨겨진 textarea에서 원본 코드 가져와서 화면에 출력
-    const sourceTextarea = document.getElementById('sourceCode');
-    const rawCode = sourceTextarea.value.trim();
-    
-    document.getElementById('displayCode').textContent = rawCode;
+/* =====================================================
+   세포소기관 데이터 & 퀴즈 (고등 생명과학 I 수준)
+   type: common(동·식물 공통) / animal(동물세포) / plant(식물세포)
+   ===================================================== */
+const ORGANELLES = [
+  { id:'nucleus', name:'핵', type:'common', icon:'🟣',
+    desc:'유전 정보(DNA)를 보관하고 세포의 생명 활동을 조절한다. 2중막인 핵막으로 싸여 있으며, 핵공을 통해 RNA·단백질 등이 드나든다. 내부의 인(仁)에서는 rRNA가 합성된다.',
+    quizzes:[
+      { q:'핵의 구조에 대한 설명으로 옳은 것은?', a:['인지질 단일막으로 둘러싸여 있다','핵막은 2중막이며 핵공을 통해 물질이 출입한다','내막이 접혀 크리스타를 이룬다','셀룰로스로 된 단단한 벽을 가진다'], c:1 },
+      { q:'핵의 가장 중요한 기능은?', a:['세포 호흡으로 ATP 생성','광합성으로 포도당 합성','DNA 보관 및 유전 정보 발현 조절','세포 내 소화'], c:2 },
+    ]},
+  { id:'mito', name:'미토콘드리아', type:'common', icon:'🫘',
+    desc:'세포 호흡을 통해 유기물(포도당)의 에너지를 ATP로 전환하는 "세포의 발전소". 2중막 구조이며 내막이 안쪽으로 접혀 크리스타를 이룬다. 자체 DNA와 리보솜을 갖는다.',
+    quizzes:[
+      { q:'미토콘드리아의 주요 기능은?', a:['단백질 합성','세포 호흡을 통한 ATP 생성','지질 합성','노폐물 저장'], c:1 },
+      { q:'미토콘드리아의 구조적 특징으로 옳은 것은?', a:['막이 없는 소기관이다','내막이 안쪽으로 접혀 있어 표면적이 넓다','틸라코이드가 쌓여 그라나를 이룬다','세포막 바깥에 위치한다'], c:1 },
+    ]},
+  { id:'ribo', name:'리보솜', type:'common', icon:'🔵',
+    desc:'rRNA와 단백질로 구성된 막이 없는 소기관으로, mRNA의 정보에 따라 아미노산을 연결하여 단백질을 합성한다. 세포질에 떠 있거나 거친면 소포체에 붙어 있다.',
+    quizzes:[
+      { q:'리보솜에서 일어나는 일은?', a:['DNA 복제','단백질 합성','ATP 합성','지질 분해'], c:1 },
+      { q:'리보솜에 대한 설명으로 옳은 것은?', a:['2중막으로 싸여 있다','rRNA와 단백질로 이루어지며 막이 없다','가수분해 효소가 들어 있다','식물세포에만 존재한다'], c:1 },
+    ]},
+  { id:'er', name:'소포체', type:'common', icon:'🌀',
+    desc:'핵막과 이어진 막성 통로. 거친면 소포체는 리보솜이 붙어 있어 단백질을 합성·수송하고, 매끈면 소포체는 지질 합성·해독 작용·Ca²⁺ 저장 등을 담당한다.',
+    quizzes:[
+      { q:'거친면 소포체의 특징으로 옳은 것은?', a:['표면에 리보솜이 붙어 있어 단백질 합성·수송에 관여한다','지질 합성이 주된 기능이다','세포 분열 시 방추사를 형성한다','광합성 색소를 포함한다'], c:0 },
+      { q:'매끈면 소포체의 기능이 아닌 것은?', a:['지질 합성','간세포에서의 해독 작용','근육세포에서의 Ca²⁺ 저장','단백질 합성'], c:3 },
+    ]},
+  { id:'golgi', name:'골지체', type:'common', icon:'📦',
+    desc:'납작한 주머니(시스터나)가 층층이 쌓인 구조. 소포체에서 온 단백질·지질을 변형·분류·포장하여 세포 밖으로 분비하거나 다른 소기관으로 보낸다. 분비 활동이 활발한 세포에 발달해 있다.',
+    quizzes:[
+      { q:'골지체의 기능으로 가장 적절한 것은?', a:['DNA 보관','단백질과 지질의 변형·분류·포장 및 분비','세포 호흡','세포 모양 유지'], c:1 },
+      { q:'골지체가 특히 발달한 세포는?', a:['소화 효소를 분비하는 이자 세포','적혈구','표피 세포','뿌리털 세포'], c:0 },
+    ]},
+  { id:'mem', name:'세포막', type:'common', icon:'🧱',
+    desc:'인지질 2중층에 단백질이 모자이크처럼 박혀 있는 유동 모자이크 구조. 세포 안팎을 구분하며 선택적 투과성을 통해 물질 출입을 조절한다.',
+    quizzes:[
+      { q:'세포막의 기본 구조는?', a:['셀룰로스 섬유 그물','인지질 2중층 + 단백질','단백질 단일층','핵산 2중 나선'], c:1 },
+      { q:'세포막의 "선택적 투과성"이란?', a:['모든 물질을 자유롭게 통과시킨다','물질에 따라 통과 여부·속도가 다르다','아무 물질도 통과시키지 않는다','빛만 통과시킨다'], c:1 },
+    ]},
+  { id:'cyto', name:'세포골격', type:'common', icon:'🕸️',
+    desc:'미세소관, 미세섬유, 중간섬유로 이루어진 단백질 섬유 그물. 세포 모양을 유지하고 소기관의 이동과 세포 운동, 세포 분열에 관여한다.',
+    quizzes:[
+      { q:'세포골격의 구성 요소가 아닌 것은?', a:['미세소관','미세섬유','중간섬유','셀룰로스 섬유'], c:3 },
+      { q:'세포골격의 기능으로 옳은 것은?', a:['세포 모양 유지와 소기관 이동','ATP 합성','유전 정보 저장','단백질 분비'], c:0 },
+    ]},
+  { id:'lyso', name:'리소좀', type:'animal', icon:'🟡',
+    desc:'골지체에서 떨어져 나온 주머니로 가수분해 효소가 들어 있다. 세포 내로 들어온 물질이나 낡은 소기관을 분해(세포 내 소화)한다. 주로 동물세포에서 관찰된다.',
+    quizzes:[
+      { q:'리소좀 안에 들어 있는 것은?', a:['광합성 색소','가수분해 효소','DNA','셀룰로스'], c:1 },
+      { q:'리소좀의 기능으로 옳은 것은?', a:['세포 내 소화와 낡은 소기관 분해','세포벽 형성','ATP 합성','방추사 형성'], c:0 },
+    ]},
+  { id:'cent', name:'중심체', type:'animal', icon:'✳️',
+    desc:'2개의 중심립이 서로 직각으로 배열된 구조로 미세소관으로 이루어져 있다. 세포 분열 시 양극으로 이동하여 방추사 형성의 중심이 된다. 동물세포에 있고 대부분의 식물세포에는 없다.',
+    quizzes:[
+      { q:'중심체의 역할은?', a:['세포 분열 시 방추사 형성','단백질 합성','광합성','물질 저장'], c:0 },
+      { q:'중심체의 구조에 대한 설명으로 옳은 것은?', a:['2중막으로 싸여 있다','2개의 중심립이 서로 직각으로 배열되어 있다','셀룰로스로 이루어져 있다','가수분해 효소를 포함한다'], c:1 },
+    ]},
+  { id:'chloro', name:'엽록체', type:'plant', icon:'🟢',
+    desc:'광합성이 일어나는 장소. 2중막 구조이며 내부에 틸라코이드가 쌓인 그라나와 그 사이를 채우는 스트로마가 있다. 엽록소를 포함하고 자체 DNA와 리보솜을 갖는다.',
+    quizzes:[
+      { q:'엽록체에서 일어나는 작용은?', a:['세포 호흡','광합성','세포 내 소화','단백질 분비'], c:1 },
+      { q:'엽록체의 구조에 대한 설명으로 옳은 것은?', a:['막이 없다','틸라코이드가 쌓여 그라나를 이룬다','내막이 접혀 크리스타를 이룬다','셀룰로스 벽을 가진다'], c:1 },
+    ]},
+  { id:'wall', name:'세포벽', type:'plant', icon:'🧱',
+    desc:'세포막 바깥을 둘러싼 단단한 구조로 주성분은 셀룰로스이다. 세포의 모양을 유지하고 보호하며, 물질이 자유롭게 통과하는 전투과성을 가진다.',
+    quizzes:[
+      { q:'식물 세포벽의 주성분은?', a:['인지질','셀룰로스','키틴','단백질'], c:1 },
+      { q:'세포벽에 대한 설명으로 옳은 것은?', a:['선택적 투과성을 가진다','세포막 안쪽에 위치한다','전투과성이며 세포 모양을 유지한다','동물세포에도 있다'], c:2 },
+    ]},
+  { id:'vac', name:'액포', type:'plant', icon:'💧',
+    desc:'물·양분·노폐물·색소 등을 저장하는 주머니. 성숙한 식물세포에서는 세포 부피의 대부분을 차지할 만큼 크게 발달하며, 팽압을 유지하여 세포 형태를 지탱한다.',
+    quizzes:[
+      { q:'액포의 기능으로 옳은 것은?', a:['물·노폐물·색소 저장 및 팽압 유지','ATP 합성','단백질 합성','방추사 형성'], c:0 },
+      { q:'액포가 크게 발달하는 세포는?', a:['성숙한 식물세포','동물 신경세포','세균','적혈구'], c:0 },
+    ]},
+];
+const TYPE_LABEL = { common:'동·식물 공통', animal:'동물세포 전용', plant:'식물세포 전용' };
 
-    // 2. 새창 열어서 실행 (Blob 방식)
-    function runCode() {
-        const blob = new Blob([rawCode], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const newWin = window.open(url, '_blank');
-        
-        if (!newWin) {
-            alert('팝업 차단이 설정되어 있습니다. 실행을 위해 팝업 차단을 해제해주세요.');
-        }
-    }
+/* =====================================================
+   게임 상태
+   ===================================================== */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+let ship = 'animal';
+let state = 'start';           // start | play | quiz | over
+let keys = {};
+let player, bullets, enemies, eBullets, boss, card, particles, bubbles;
+let fuel, score, kills, bossCount, killsForBoss, spawnT, shootT, t, collected, bossWarn, shake, msgs;
+let lastTs = 0;
 
-    // 3. 구글 사이트 도구 iframe 환경에서도 작동하는 강력한 복사 기능
-    function copyCode(btn) {
-        // 임시 텍스트 영역 생성
-        const tempTextArea = document.createElement("textarea");
-        tempTextArea.value = rawCode;
-        
-        // 화면에서 보이지 않게 처리
-        tempTextArea.style.position = "fixed";
-        tempTextArea.style.left = "-9999px";
-        tempTextArea.style.top = "-9999px";
-        document.body.appendChild(tempTextArea);
-        
-        // 선택 및 복사 실행
-        tempTextArea.select();
-        tempTextArea.setSelectionRange(0, 99999); // 모바일 호환성
-        
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✅ 복사 완료!';
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                }, 2000);
-            } else {
-                alert('복사에 실패했습니다.');
-            }
-        } catch (err) {
-            alert('이 브라우저에서는 복사 기능을 지원하지 않습니다.');
-        }
-        
-        // 임시 텍스트 영역 제거
-        document.body.removeChild(tempTextArea);
+function initRun(){
+  player = { x:W/2, y:H-80, r:18, speed:300 };
+  bullets=[]; enemies=[]; eBullets=[]; particles=[]; msgs=[];
+  boss=null; card=null;
+  fuel=100; score=0; kills=0; bossCount=0; killsForBoss=8; spawnT=0; shootT=0; t=0; bossWarn=0; shake=0;
+  collected = new Set();
+  bubbles = Array.from({length:40},()=>({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*3,v:20+Math.random()*50}));
+  renderDex();
+}
+
+function startGame(s){
+  ship = s;
+  initRun();
+  show('start',false); show('over',false); show('quiz',false); show('game',true);
+  state='play';
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+}
+function toStart(){ state='start'; show('over',false); show('game',false); show('start',true); }
+function show(id,on){ document.getElementById(id).classList.toggle('hidden',!on); }
+
+/* ---------- 도감 ---------- */
+function renderDex(){
+  const dex = document.getElementById('dex');
+  dex.innerHTML = ORGANELLES.map(o=>`
+    <div class="org-row ${collected.has(o.id)?'got':''}">
+      <span class="ic">${collected.has(o.id)?o.icon:'❓'}</span>
+      <span>${collected.has(o.id)?o.name:'???'}</span>
+      <span class="tag ${o.type}">${o.type==='common'?'공통':o.type==='animal'?'동물':'식물'}</span>
+    </div>`).join('');
+}
+
+/* =====================================================
+   입력
+   ===================================================== */
+addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code==='Space') e.preventDefault(); });
+addEventListener('keyup',e=>{ keys[e.code]=false; });
+function bindTouch(id,code){
+  const b=document.getElementById(id);
+  const on=e=>{e.preventDefault();keys[code]=true}, off=e=>{e.preventDefault();keys[code]=false};
+  b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off); b.addEventListener('pointerleave',off); b.addEventListener('pointercancel',off);
+}
+bindTouch('tL','ArrowLeft'); bindTouch('tR','ArrowRight'); bindTouch('tF','Space');
+// 캔버스 드래그로도 이동
+let dragging=false;
+cv.addEventListener('pointerdown',e=>{dragging=true;moveTo(e)});
+cv.addEventListener('pointermove',e=>{if(dragging)moveTo(e)});
+addEventListener('pointerup',()=>dragging=false);
+function moveTo(e){
+  if(state!=='play') return;
+  const r=cv.getBoundingClientRect();
+  player.x = (e.clientX-r.left)/r.width*W;
+  player.y = Math.max(H*0.45, Math.min(H-40,(e.clientY-r.top)/r.height*H));
+}
+
+/* =====================================================
+   루프
+   ===================================================== */
+function loop(ts){
+  if(state!=='play'){ lastTs=ts; if(state==='quiz'||state==='play') requestAnimationFrame(loop); return; }
+  let dt = Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+  update(dt); draw();
+  requestAnimationFrame(loop);
+}
+
+function update(dt){
+  t+=dt;
+  // 연료 소모
+  fuel -= 1.4*dt;
+  if(fuel<=0){ fuel=0; gameOver(); return; }
+
+  // 이동
+  const left = keys.ArrowLeft||keys.KeyA, right=keys.ArrowRight||keys.KeyD, up=keys.ArrowUp||keys.KeyW, down=keys.ArrowDown||keys.KeyS;
+  if(left) player.x-=player.speed*dt; if(right) player.x+=player.speed*dt;
+  if(up) player.y-=player.speed*dt; if(down) player.y+=player.speed*dt;
+  player.x=Math.max(20,Math.min(W-20,player.x)); player.y=Math.max(H*0.45,Math.min(H-40,player.y));
+
+  // 발사
+  shootT-=dt;
+  if(keys.Space && shootT<=0){ bullets.push({x:player.x,y:player.y-22,vy:-520}); shootT=0.18; }
+  bullets.forEach(b=>b.y+=b.vy*dt); bullets=bullets.filter(b=>b.y>-10);
+
+  // 적 생성 (보스 중에는 적게)
+  spawnT-=dt;
+  if(spawnT<=0){
+    const interval = boss? 2.2 : Math.max(0.45, 0.95-bossCount*0.08);
+    spawnT=interval;
+    const kind = Math.random()<0.6?'virus':'bact';
+    enemies.push({ x:30+Math.random()*(W-60), y:-30, vy:70+Math.random()*60+bossCount*10, vx:(Math.random()-0.5)*60, r:kind==='virus'?16:14, hp:kind==='virus'?1:2, kind, ph:Math.random()*6 });
+  }
+  enemies.forEach(e=>{ e.y+=e.vy*dt; e.x+=Math.sin(t*2+e.ph)*e.vx*dt; });
+  enemies=enemies.filter(e=>e.y<H+40);
+
+  // 보스 등장
+  if(!boss && kills>=killsForBoss && !card){
+    boss={ x:W/2, y:-60, ty:90, r:46, hp:18+bossCount*10, maxHp:18+bossCount*10, dir:1, shootT:1.5, name:['독감 바이러스','대장균 군단','곰팡이 포자','슈퍼 박테리아'][bossCount%4] };
+    bossWarn=2.2;
+  }
+  if(bossWarn>0) bossWarn-=dt;
+  if(boss){
+    if(boss.y<boss.ty) boss.y+=60*dt;
+    else{
+      boss.x+=boss.dir*(110+bossCount*20)*dt;
+      if(boss.x>W-60||boss.x<60) boss.dir*=-1;
+      boss.shootT-=dt;
+      if(boss.shootT<=0){
+        boss.shootT=Math.max(0.6,1.3-bossCount*0.1);
+        const ang=Math.atan2(player.y-boss.y,player.x-boss.x);
+        for(let k=-1;k<=1;k++){ const a=ang+k*0.25; eBullets.push({x:boss.x,y:boss.y+30,vx:Math.cos(a)*200,vy:Math.sin(a)*200,r:6}); }
+      }
     }
+  }
+  eBullets.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt;}); eBullets=eBullets.filter(b=>b.y<H+10&&b.x>-10&&b.x<W+10);
+
+  // 총알 vs 적
+  for(const b of bullets){
+    for(const e of enemies){
+      if(dist(b,e)<e.r+4){ b.dead=true; e.hp--; if(e.hp<=0){ e.dead=true; kills++; score+=10; burst(e.x,e.y,e.kind==='virus'?'#ff6b9d':'#7ad7ff',10);} }
+    }
+    if(boss && boss.y>0 && dist(b,boss)<boss.r+4){ b.dead=true; boss.hp--; burst(b.x,b.y,'#ffd86b',4);
+      if(boss.hp<=0){ score+=200; bossCount++; killsForBoss=kills+8+bossCount*3; burst(boss.x,boss.y,'#ffd86b',40); shake=0.4;
+        const org = ORGANELLES[Math.floor(Math.random()*ORGANELLES.length)];
+        card={x:boss.x,y:boss.y,vy:70,org,rot:0};
+        addMsg('미지의 소기관 카드 획득 기회!');
+        boss=null; eBullets=[]; }
+    }
+  }
+  bullets=bullets.filter(b=>!b.dead); enemies=enemies.filter(e=>!e.dead);
+
+  // 적/탄 vs 플레이어
+  for(const e of enemies){ if(dist(e,player)<e.r+player.r-4){ e.dead=true; hurt(12); } }
+  enemies=enemies.filter(e=>!e.dead);
+  for(const b of eBullets){ if(dist(b,player)<b.r+player.r-4){ b.dead=true; hurt(8); } }
+  eBullets=eBullets.filter(b=>!b.dead);
+
+  // 카드
+  if(card){
+    card.y+=card.vy*dt; card.rot=Math.sin(t*3)*0.15;
+    if(dist(card,player)<player.r+30){ openQuiz(card.org); card=null; }
+    else if(card.y>H+50){ card=null; addMsg('카드를 놓쳤다…'); }
+  }
+
+  // 파티클·배경
+  particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;}); particles=particles.filter(p=>p.life>0);
+  bubbles.forEach(b=>{ b.y+=b.v*dt; if(b.y>H+5){b.y=-5;b.x=Math.random()*W;} });
+  msgs.forEach(m=>m.life-=dt); msgs=msgs.filter(m=>m.life>0);
+  if(shake>0) shake-=dt;
+}
+function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+function hurt(n){ fuel-=n; shake=0.25; burst(player.x,player.y,'#ff5d5d',12); addMsg(`연료 -${n}`); }
+function burst(x,y,c,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.28, s=60+Math.random()*180; particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0.4+Math.random()*0.4,c}); } }
+function addMsg(txt){ msgs.push({txt,life:1.6}); }
+
+/* =====================================================
+   그리기
+   ===================================================== */
+function draw(){
+  ctx.save();
+  if(shake>0) ctx.translate((Math.random()-0.5)*8,(Math.random()-0.5)*8);
+  // 배경 (세포질 느낌)
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0a1030'); g.addColorStop(1,'#050816');
+  ctx.fillStyle=g; ctx.fillRect(-10,-10,W+20,H+20);
+  ctx.fillStyle='rgba(120,150,255,0.18)';
+  bubbles.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.28);ctx.fill();});
+
+  // 적
+  enemies.forEach(e=> e.kind==='virus'? drawVirus(e.x,e.y,e.r,'#ff6b9d','#ff2d7a') : drawBact(e.x,e.y,e.r,e.ph));
+  // 보스
+  if(boss){ drawVirus(boss.x,boss.y,boss.r,'#b388ff','#7c4dff',true);
+    ctx.fillStyle='#fff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.fillText(boss.name,boss.x,boss.y-boss.r-20);
+    ctx.fillStyle='#331'; ctx.fillRect(boss.x-50,boss.y-boss.r-14,100,8);
+    ctx.fillStyle='#ff5d5d'; ctx.fillRect(boss.x-50,boss.y-boss.r-14,100*boss.hp/boss.maxHp,8); }
+  // 탄
+  ctx.fillStyle='#ff5d5d'; eBullets.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.28);ctx.fill();});
+  bullets.forEach(b=>{ ctx.fillStyle=ship==='animal'?'#ffb3c9':'#b6ffd3'; ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=8; ctx.fillRect(b.x-2,b.y-8,4,14); ctx.shadowBlur=0; });
+  // 카드
+  if(card) drawCard(card.x,card.y,card.rot);
+  // 플레이어
+  drawShip(ctx,player.x,player.y,ship,1);
+  // 파티클
+  particles.forEach(p=>{ ctx.globalAlpha=Math.max(0,p.life*2); ctx.fillStyle=p.c; ctx.fillRect(p.x-2,p.y-2,4,4); }); ctx.globalAlpha=1;
+  ctx.restore();
+
+  // HUD
+  ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,W,46);
+  ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='bold 13px sans-serif';
+  ctx.fillText('⛽ 연료',12,18);
+  ctx.fillStyle='#222a4a'; ctx.fillRect(70,8,180,14);
+  const fc = fuel>40?(ship==='animal'?'#ff7aa2':'#6ee7a0'):fuel>20?'#ffd86b':'#ff5d5d';
+  ctx.fillStyle=fc; ctx.fillRect(70,8,180*fuel/100,14);
+  ctx.fillStyle='#fff'; ctx.font='11px sans-serif'; ctx.fillText(Math.ceil(fuel)+'%',258,19);
+  ctx.textAlign='right'; ctx.font='bold 14px sans-serif'; ctx.fillStyle='#ffd86b'; ctx.fillText('점수 '+score,W-12,19);
+  ctx.textAlign='left'; ctx.fillStyle='#9aa5d6'; ctx.font='11px sans-serif';
+  ctx.fillText((ship==='animal'?'🐾 동물세포 비행선':'🌿 식물세포 비행선')+'   도감 '+collected.size+'/'+ORGANELLES.length,12,38);
+  ctx.textAlign='right';
+  ctx.fillText(boss?'⚠ 보스 전투 중':card?'⬇ 카드를 잡아라!':'보스까지 '+Math.max(0,killsForBoss-kills)+'마리',W-12,38);
+
+  if(bossWarn>0){ ctx.textAlign='center'; ctx.fillStyle=`rgba(255,93,93,${0.5+0.5*Math.sin(t*12)})`; ctx.font='bold 28px sans-serif'; ctx.fillText('⚠ WARNING: 중간 보스 출현',W/2,H/2); }
+  msgs.forEach((m,i)=>{ ctx.textAlign='center'; ctx.globalAlpha=Math.min(1,m.life); ctx.fillStyle='#fff'; ctx.font='bold 16px sans-serif'; ctx.fillText(m.txt,W/2,H*0.35+i*22); ctx.globalAlpha=1; });
+}
+
+function drawVirus(x,y,r,c1,c2,angry){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(t*0.8);
+  ctx.strokeStyle=c2; ctx.lineWidth=3;
+  for(let i=0;i<10;i++){ const a=i/10*6.28; ctx.beginPath(); ctx.moveTo(Math.cos(a)*r*0.8,Math.sin(a)*r*0.8); ctx.lineTo(Math.cos(a)*r*1.25,Math.sin(a)*r*1.25); ctx.stroke();
+    ctx.fillStyle=c2; ctx.beginPath(); ctx.arc(Math.cos(a)*r*1.25,Math.sin(a)*r*1.25,r*0.14,0,6.28); ctx.fill(); }
+  const g=ctx.createRadialGradient(-r*0.3,-r*0.3,2,0,0,r); g.addColorStop(0,'#fff'); g.addColorStop(0.15,c1); g.addColorStop(1,c2);
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r*0.85,0,6.28); ctx.fill();
+  ctx.restore();
+  if(angry){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x-14,y-6,7,0,6.28); ctx.arc(x+14,y-6,7,0,6.28); ctx.fill();
+    ctx.fillStyle='#200'; ctx.beginPath(); ctx.arc(x-12,y-5,3.5,0,6.28); ctx.arc(x+16,y-5,3.5,0,6.28); ctx.fill();
+    ctx.strokeStyle='#200'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y+12,10,0.2,2.9); ctx.stroke(); }
+}
+function drawBact(x,y,r,ph){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(t*2+ph)*0.6);
+  ctx.fillStyle='#7ad7ff'; ctx.strokeStyle='#2bb5ff'; ctx.lineWidth=2;
+  roundRect(-r*1.4,-r*0.6,r*2.8,r*1.2,r*0.6); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#2bb5ff'; ctx.lineWidth=1.5;
+  for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(-r*1.4+i*r*0.9,-r*0.6); ctx.quadraticCurveTo(-r*1.4+i*r*0.9-5,-r*1.3,-r*1.4+i*r*0.9+3,-r*1.6); ctx.stroke(); }
+  ctx.restore();
+}
+function drawCard(x,y,rot){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  ctx.shadowColor='#ffd86b'; ctx.shadowBlur=20;
+  const g=ctx.createLinearGradient(-22,-30,22,30); g.addColorStop(0,'#2b3a86'); g.addColorStop(1,'#0f1640');
+  ctx.fillStyle=g; ctx.strokeStyle='#ffd86b'; ctx.lineWidth=2.5; roundRect(-22,-30,44,60,8); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur=0; ctx.fillStyle='#ffd86b'; ctx.font='bold 30px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?',0,2);
+  ctx.textBaseline='alphabetic'; ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+function drawShip(c,x,y,type,s){
+  c.save(); c.translate(x,y); c.scale(s,s);
+  // 엔진 불꽃
+  c.fillStyle=type==='animal'?'rgba(255,150,180,0.8)':'rgba(150,255,190,0.8)';
+  c.beginPath(); c.moveTo(-8,20); c.lineTo(0,30+Math.random()*10); c.lineTo(8,20); c.fill();
+  if(type==='animal'){
+    // 둥근 세포막 몸체
+    c.fillStyle='#ffb3c9'; c.strokeStyle='#ff5c8a'; c.lineWidth=3;
+    c.beginPath(); c.moveTo(0,-26); c.bezierCurveTo(22,-20,26,14,10,20); c.lineTo(-10,20); c.bezierCurveTo(-26,14,-22,-20,0,-26); c.closePath(); c.fill(); c.stroke();
+    // 핵
+    c.fillStyle='#c84fff'; c.beginPath(); c.arc(0,0,8,0,6.28); c.fill();
+    c.fillStyle='#8a2be2'; c.beginPath(); c.arc(2,-2,3,0,6.28); c.fill();
+    // 미토콘드리아 / 리소좀
+    c.fillStyle='#ff9f43'; c.beginPath(); c.ellipse(-10,8,5,3,0.6,0,6.28); c.fill();
+    c.fillStyle='#ffe066'; c.beginPath(); c.arc(10,8,3,0,6.28); c.fill();
+  } else {
+    // 세포벽 (각진 몸체)
+    c.fillStyle='#b6ffd3'; c.strokeStyle='#1f9d55'; c.lineWidth=4;
+    c.beginPath(); c.moveTo(0,-28); c.lineTo(18,-16); c.lineTo(18,18); c.lineTo(-18,18); c.lineTo(-18,-16); c.closePath(); c.fill(); c.stroke();
+    // 세포막 (안쪽 선)
+    c.strokeStyle='#6ee7a0'; c.lineWidth=1.5; c.beginPath(); c.moveTo(0,-22); c.lineTo(13,-14); c.lineTo(13,13); c.lineTo(-13,13); c.lineTo(-13,-14); c.closePath(); c.stroke();
+    // 액포
+    c.fillStyle='rgba(120,200,255,0.7)'; c.beginPath(); c.ellipse(0,4,9,7,0,0,6.28); c.fill();
+    // 핵
+    c.fillStyle='#c84fff'; c.beginPath(); c.arc(-7,-9,5,0,6.28); c.fill();
+    // 엽록체
+    c.fillStyle='#2ecc71'; [[8,-10],[9,2],[-8,8]].forEach(([px,py])=>{ c.beginPath(); c.ellipse(px,py,4,2.5,0.4,0,6.28); c.fill(); });
+  }
+  c.restore();
+}
+// 시작 화면 미리보기
+(function(){ const a=document.getElementById('pvA').getContext('2d'), p=document.getElementById('pvP').getContext('2d');
+  let f=0; (function anim(){ f++; [[a,'animal'],[p,'plant']].forEach(([c,type])=>{ c.clearRect(0,0,120,100); drawShip(c,60,48+Math.sin(f*0.05)*3,type,1.5); }); if(state==='start') requestAnimationFrame(anim); else setTimeout(anim,500); })(); })();
+
+/* =====================================================
+   퀴즈
+   ===================================================== */
+let curOrg=null;
+function openQuiz(org){
+  state='quiz'; curOrg=org;
+  const q = org.quizzes[Math.floor(Math.random()*org.quizzes.length)];
+  document.getElementById('qIcon').textContent=org.icon;
+  document.getElementById('qName').textContent=org.name;
+  const compatible = org.type==='common' || org.type===ship;
+  document.getElementById('qMeta').innerHTML = `<span class="tag ${org.type}">${TYPE_LABEL[org.type]}</span> &nbsp; 내 비행선: ${ship==='animal'?'🐾 동물세포':'🌿 식물세포'}`;
+  document.getElementById('qText').textContent=q.q;
+  const opts=document.getElementById('qOpts'); opts.innerHTML='';
+  // 보기 섞기
+  const order=[0,1,2,3].sort(()=>Math.random()-0.5);
+  order.forEach(i=>{ const b=document.createElement('button'); b.textContent=q.a[i]; b.onclick=()=>answer(i===q.c,b,compatible,order.indexOf(q.c)); opts.appendChild(b); });
+  document.getElementById('qResult').classList.add('hidden');
+  document.getElementById('qNext').classList.add('hidden');
+  show('quiz',true);
+}
+function answer(correct,btn,compatible,correctIdx){
+  const btns=[...document.getElementById('qOpts').children];
+  btns.forEach(b=>b.disabled=true);
+  btns[correctIdx].classList.add('ok'); if(!correct) btn.classList.add('bad');
+  const r=document.getElementById('qResult'); r.classList.remove('hidden','good','warn','bad');
+  let head;
+  if(correct && compatible){ fuel=Math.min(100,fuel+45); score+=150; collected.add(curOrg.id); r.classList.add('good');
+    head=`✅ 정답! <b>${curOrg.name}</b>은(는) ${ship==='animal'?'동물':'식물'}세포 비행선의 연료로 사용할 수 있다. <b>연료 +45</b>, 점수 +150`; }
+  else if(correct && !compatible){ score+=100; collected.add(curOrg.id); r.classList.add('warn');
+    head=`⚠ 정답이지만… <b>${curOrg.name}</b>은(는) <b>${TYPE_LABEL[curOrg.type]}</b> 소기관이라 ${ship==='animal'?'동물':'식물'}세포 비행선에서는 연료로 쓸 수 없다! 점수 +100 (연료 보충 실패)`; }
+  else { fuel=Math.max(1,fuel-10); r.classList.add('bad');
+    head=`❌ 오답! <b>연료 -10</b>. 아래 설명을 읽고 다음 기회를 노리자.`; }
+  r.innerHTML = head + `<div style="margin-top:8px;color:var(--muted)">📖 ${curOrg.desc}</div>`;
+  renderDex();
+  document.getElementById('qNext').classList.remove('hidden');
+}
+function resumeGame(){ show('quiz',false); state='play'; lastTs=performance.now(); requestAnimationFrame(loop); }
+
+/* =====================================================
+   게임 오버
+   ===================================================== */
+function gameOver(){
+  state='over';
+  document.getElementById('oScore').textContent=score;
+  document.getElementById('oKills').textContent=kills;
+  document.getElementById('oBoss').textContent=bossCount;
+  document.getElementById('oOrg').textContent=collected.size;
+  const names=ORGANELLES.filter(o=>collected.has(o.id)).map(o=>o.icon+o.name);
+  document.getElementById('oList').textContent = names.length? '정복한 소기관: '+names.join(', ') : '아직 정복한 소기관이 없다. 보스를 물리쳐 카드를 모아보자!';
+  show('over',true);
+}
 </script>
-
 </body>
 </html>
