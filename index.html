@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Header Code Block</title>
+    <style>
+        :root {
+            --bg-color: #f7f6f3;
+            --border-color: #e1dfdc;
+            --text-color: #37352f;
+            --header-bg: #f1f0ec;
+            --btn-hover: #e0deda;
+        }
+
+        /* 전체 창 높이를 고정하고 메인 스크롤 숨김 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            height: 100%;
+            overflow: hidden; 
+        }
+
+        .notion-code-container {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin: 8px;
+            height: calc(100vh - 16px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* 상단 툴바 영역 (고정) */
+        .notion-code-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--header-bg);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            color: #787774;
+            z-index: 10;
+        }
+
+        .notion-code-lang {
+            font-weight: 500;
+        }
+
+        .notion-code-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .notion-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .notion-btn:hover {
+            background-color: var(--btn-hover);
+            border-color: #c9c7c2;
+        }
+
+        /* 코드 표시 영역 (스크롤) */
+        .notion-code-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .notion-code-pre {
+            margin: 0;
+            padding: 16px;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="notion-code-container">
+    <div class="notion-code-header">
+        <span class="notion-code-lang">HTML / CSS / JS</span>
+        <div class="notion-code-buttons">
+            <button class="notion-btn" onclick="runCode()">▶ 실행하기 (새창)</button>
+            <button class="notion-btn" onclick="copyCode(this)">📋 코드 복사</button>
+        </div>
+    </div>
+    <div class="notion-code-body">
+        <pre class="notion-code-pre"><code id="displayCode"></code></pre>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ▼▼▼ 아래 <textarea> 와 </textarea> 사이에 '실행할 코드'를 붙여넣으세요 ▼▼▼ -->
+<!-- ========================================================================= -->
+<textarea id="sourceCode" style="display: none;">
+
+(이 글을 지우고 여기에 뱀게임 코드를 붙여 넣기 하세요)
+
+</textarea>
+<!-- ========================================================================= -->
+<!-- ▲▲▲ 여기까지 ▲▲▲ -->
+<!-- ========================================================================= -->
+
+<script>
+    // 1. 숨겨진 textarea에서 원본 코드 가져와서 화면에 출력
+    const sourceTextarea = document.getElementById('sourceCode');
+    const rawCode = sourceTextarea.value.trim();
+    
+    document.getElementById('displayCode').textContent = rawCode;
+
+    // 2. 새창 열어서 실행 (Blob 방식)
+    function runCode() {
+        const blob = new Blob([rawCode], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const newWin = window.open(url, '_blank');
+        
+        if (!newWin) {
+            alert('팝업 차단이 설정되어 있습니다. 실행을 위해 팝업 차단을 해제해주세요.');
+        }
+    }
+
+    // 3. 구글 사이트 도구 iframe 환경에서도 작동하는 강력한 복사 기능
+    function copyCode(btn) {
+        // 임시 텍스트 영역 생성
+        const tempTextArea = document.createElement("textarea");
+        tempTextArea.value = rawCode;
+        
+        // 화면에서 보이지 않게 처리
+        tempTextArea.style.position = "fixed";
+        tempTextArea.style.left = "-9999px";
+        tempTextArea.style.top = "-9999px";
+        document.body.appendChild(tempTextArea);
+        
+        // 선택 및 복사 실행
+        tempTextArea.select();
+        tempTextArea.setSelectionRange(0, 99999); // 모바일 호환성
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ 복사 완료!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            } else {
+                alert('복사에 실패했습니다.');
+            }
+        } catch (err) {
+            alert('이 브라우저에서는 복사 기능을 지원하지 않습니다.');
+        }
+        
+        // 임시 텍스트 영역 제거
+        document.body.removeChild(tempTextArea);
+    }
+</script>
+
+</body>
+</html>
